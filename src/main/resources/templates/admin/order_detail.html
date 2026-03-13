@@ -1,0 +1,433 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>订单详情</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(
+                    circle,
+                    rgba(30, 136, 229, 0.08) 0%,
+                    transparent 70%
+            );
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            bottom: -30%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(
+                    circle,
+                    rgba(21, 101, 192, 0.06) 0%,
+                    transparent 70%
+            );
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .decorative-dots {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(circle, #1e88e5 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0.03;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            padding: 16px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .logo::before {
+            content: "🏪";
+            font-size: 32px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav a:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav a.active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .nav a[href*="cashier"]::before {
+            content: "💰";
+        }
+        .nav a[href*="orders"]::before {
+            content: "📋";
+        }
+        .nav a[href*="statistics"]::before {
+            content: "📊";
+        }
+        .nav a[href*="product"]::before {
+            content: "📦";
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .logout-btn::before {
+            content: "🚪";
+        }
+
+        .main-content {
+            padding: 24px 40px;
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1565c0;
+            margin-bottom: 24px;
+        }
+
+        .page-title::before {
+            content: "📄";
+            font-size: 32px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #1e88e5, #1565c0, #1e88e5);
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1565c0;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .order-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .order-info-item {
+            padding: 16px;
+            background: #f5f5f5;
+            border-radius: 12px;
+        }
+
+        .order-info-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .order-info-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .order-info-value.price {
+            color: #e53935;
+        }
+
+        .order-info-value.price::before {
+            content: "¥";
+        }
+
+        .order-info-value.status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s ease;
+        }
+
+        .order-item:hover {
+            background: #f9f9f9;
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .order-item-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .order-item-quantity {
+            font-size: 16px;
+            color: #666;
+            margin: 0 24px;
+        }
+
+        .order-item-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e53935;
+        }
+
+        .order-item-price::before {
+            content: "¥";
+        }
+
+        .order-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            margin-top: 24px;
+        }
+
+        .order-total-label {
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .order-total-amount {
+            font-size: 32px;
+            font-weight: 800;
+            color: #e53935;
+        }
+
+        .order-total-amount::before {
+            content: "¥";
+            font-size: 24px;
+        }
+
+        .order-actions {
+            text-align: center;
+            margin-top: 24px;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 136, 229, 0.4);
+        }
+
+        .btn-back::before {
+            content: "←";
+        }
+    </style>
+</head>
+<body>
+<div class="decorative-dots"></div>
+<div class="header">
+    <div class="header-left">
+        <div class="logo">收银系统</div>
+        <nav class="nav">
+            <a href="/admin/cashier">收银</a>
+            <a href="/admin/orders" class="active">订单管理</a>
+            <a href="/admin/orders/statistics">统计分析</a>
+            <a href="/admin/product/list">商品管理</a>
+        </nav>
+    </div>
+    <a href="/admin/logout" class="logout-btn">退出</a>
+</div>
+
+<div class="main-content">
+    <h2 class="page-title">订单详情</h2>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>订单信息</h3>
+        </div>
+        <div class="card-body">
+            <div class="order-info">
+                <div class="order-info-item">
+                    <div class="order-info-label">订单号</div>
+                    <div
+                            class="order-info-value"
+                            th:text="${order.orderNumber}"
+                    ></div>
+                </div>
+                <div class="order-info-item">
+                    <div class="order-info-label">下单时间</div>
+                    <div
+                            class="order-info-value"
+                            th:text="${#dates.format(order.orderDate, 'yyyy-MM-dd HH:mm:ss')}"
+                    ></div>
+                </div>
+                <div class="order-info-item">
+                    <div class="order-info-label">订单状态</div>
+                    <div
+                            class="order-info-value status"
+                            th:text="${order.status}"
+                    ></div>
+                </div>
+                <div class="order-info-item">
+                    <div class="order-info-label">商品数量</div>
+                    <div
+                            class="order-info-value"
+                            th:text="${#lists.size(order.orderItems)} + ' 件'"
+                    ></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>商品明细</h3>
+        </div>
+        <div class="card-body">
+            <div th:each="item : ${order.orderItems}" class="order-item">
+                <span class="order-item-name" th:text="${item.product.name}"></span>
+                <span class="order-item-quantity">× [[${item.quantity}]]</span>
+                <span class="order-item-price" th:text="${item.price}"></span>
+            </div>
+            <div class="order-total">
+                <span class="order-total-label">订单总计</span>
+                <span
+                        class="order-total-amount"
+                        th:text="${order.totalPrice}"
+                ></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="order-actions">
+        <a href="/admin/orders" class="btn-back">返回列表</a>
+    </div>
+</div>
+</body>
+</html>

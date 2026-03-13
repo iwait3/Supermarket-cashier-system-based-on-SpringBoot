@@ -1,0 +1,350 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>统计分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                    "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .decorative-dots {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: radial-gradient(circle, #1e88e5 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+            color: white;
+            padding: 16px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+        .logo::before {
+            content: "🏪";
+            font-size: 32px;
+        }
+
+        .nav {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav a:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .nav a.active {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .nav a[href*="cashier"]::before {
+            content: "💰";
+        }
+        .nav a[href*="orders"]::before {
+            content: "📋";
+        }
+        .nav a[href*="statistics"]::before {
+            content: "📊";
+        }
+        .nav a[href*="product"]::before {
+            content: "📦";
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 17px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .logout-btn::before {
+            content: "🚪";
+        }
+
+        .main-content {
+            padding: 24px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1565c0;
+            margin-bottom: 24px;
+        }
+
+        .page-title::before {
+            content: "📊";
+            font-size: 32px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 24px;
+            border-bottom: 2px solid #e3f2fd;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        }
+
+        .card-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1565c0;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+        }
+
+        .no-data {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 350px;
+            color: #999;
+        }
+
+        .no-data-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .no-data-text {
+            font-size: 18px;
+        }
+
+        @media (max-width: 900px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="decorative-dots"></div>
+<div class="header">
+    <div class="header-left">
+        <div class="logo">收银系统</div>
+        <nav class="nav">
+            <a href="/admin/cashier">收银</a>
+            <a href="/admin/orders">订单管理</a>
+            <a href="/admin/orders/statistics" class="active">统计分析</a>
+            <a href="/admin/product/list">商品管理</a>
+        </nav>
+    </div>
+    <a href="/admin/logout" class="logout-btn">退出</a>
+</div>
+
+<div class="main-content">
+    <h2 class="page-title">统计分析</h2>
+
+    <div class="charts-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3>销量统计（扇形图）</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>盈利统计（柱状图）</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var salesLabels = /*[[${salesData.keySet().toArray()}]]*/ [];
+    var salesValues = /*[[${salesData.values().toArray()}]]*/ [];
+    var profitLabels = /*[[${profitData.keySet().toArray()}]]*/ [];
+    var profitValues = /*[[${profitData.values().toArray()}]]*/ [];
+    /*]]>*/
+
+    console.log("销量标签:", salesLabels);
+    console.log("销量数据:", salesValues);
+    console.log("盈利标签:", profitLabels);
+    console.log("盈利数据:", profitValues);
+
+    if (typeof Chart === "undefined") {
+        console.error("Chart.js未正确加载");
+        alert("图表库未正确加载，请检查网络连接");
+    } else {
+        console.log("Chart.js已加载");
+
+        var salesCtx = document.getElementById("salesChart");
+        if (salesCtx && salesLabels.length > 0) {
+            new Chart(salesCtx, {
+                type: "pie",
+                data: {
+                    labels: salesLabels,
+                    datasets: [
+                        {
+                            data: salesValues,
+                            backgroundColor: [
+                                "rgba(255, 99, 132, 0.8)",
+                                "rgba(54, 162, 235, 0.8)",
+                                "rgba(255, 206, 86, 0.8)",
+                                "rgba(75, 192, 192, 0.8)",
+                                "rgba(153, 102, 255, 0.8)",
+                                "rgba(255, 159, 64, 0.8)",
+                            ],
+                            borderColor: [
+                                "rgba(255, 99, 132, 1)",
+                                "rgba(54, 162, 235, 1)",
+                                "rgba(255, 206, 86, 1)",
+                                "rgba(75, 192, 192, 1)",
+                                "rgba(153, 102, 255, 1)",
+                                "rgba(255, 159, 64, 1)",
+                            ],
+                            borderWidth: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                        },
+                    },
+                },
+            });
+            console.log("销量图表创建成功");
+        } else {
+            console.error("找不到销量图表容器或数据为空");
+        }
+
+        var profitCtx = document.getElementById("profitChart");
+        if (profitCtx && profitLabels.length > 0) {
+            new Chart(profitCtx, {
+                type: "bar",
+                data: {
+                    labels: profitLabels,
+                    datasets: [
+                        {
+                            label: "盈利",
+                            data: profitValues,
+                            backgroundColor: "rgba(54, 162, 235, 0.8)",
+                            borderColor: "rgba(54, 162, 235, 1)",
+                            borderWidth: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                        },
+                    },
+                },
+            });
+            console.log("盈利图表创建成功");
+        } else {
+            console.error("找不到盈利图表容器或数据为空");
+        }
+    }
+</script>
+</body>
+</html>
